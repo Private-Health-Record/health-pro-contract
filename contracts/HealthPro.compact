@@ -1,0 +1,74 @@
+pragma language_version >= 0.16.0 && <= 0.17;
+
+import CompactStandardLibrary;
+import "../compact-contracts/node_modules/@openzeppelin-compact/contracts/src/access/Ownable"
+  prefix Ownable_;
+import "../compact-contracts/node_modules/@openzeppelin-compact/contracts/src/access/AccessControl"
+  prefix AccessControl_;
+import "../compact-contracts/node_modules/@openzeppelin-compact/contracts/src/security/Pausable"
+  prefix Pausable_;
+import "../compact-contracts/node_modules/@openzeppelin-compact/contracts/src/utils/Utils"
+  prefix Utils_;
+
+export sealed ledger PROVIDER_ROLE: Bytes<32>;
+export sealed ledger PATIENT_ROLE: Bytes<32>;
+export sealed ledger DELEGATE_ROLE: Bytes<32>;
+
+export ledger registeredPatients: Map<ZswapCoinPublicKey, Boolean>;
+export ledger registeredProviders: Set<ZswapCoinPublicKey>;
+export ledger healthRecords: Map<ZswapCoinPublicKey, Opaque<"string">>;
+
+export enum AccountType {
+  PROVIDER,
+  PATIENT
+}
+
+constructor(
+  _initOwner: Either<ZswapCoinPublicKey, ContractAddress>,
+) {
+  Ownable_initialize(_initOwner);
+  AccessControl__grantRole(AccessControl_DEFAULT_ADMIN_ROLE, _initOwner);
+  PROVIDER_ROLE = persistentHash<Bytes<32>>(pad(32, "PROVIDER_ROLE"));
+  PATIENT_ROLE = persistentHash<Bytes<32>>(pad(32, "PATIENT_ROLE"));
+}
+
+witness secretKey(): Bytes<32>;
+
+export circuit register(_accountType: AccountType): Boolean {
+  Pausable_assertNotPaused();
+
+  const caller = left<ZswapCoinPublicKey,ContractAddress>(ownPublicKey());
+  assert(!Utils_isContractAddress(caller), "HealthPro: contract address not allowed");
+
+  if (disclose(_accountType) == AccountType.PROVIDER) {
+    assert(!registeredProviders.member(caller.left), "HealthPro: account already registered as a provider");
+    registeredProviders.insert(caller.left);
+    AccessControl__grantRole(PROVIDER_ROLE, caller);
+    return true;
+  }
+
+  if (disclose(_accountType) == AccountType.PATIENT) {
+    assert(!registeredPatients.lookup(caller.left), "HealthPro: account already registered as a patient");
+    registeredPatients.insert(caller.left, true);
+    AccessControl__grantRole(PATIENT_ROLE, caller);
+    return true;
+  }
+
+  return false;
+}
+
+export circuit storeHealthRecord(record: Opaque<"string">): [] {
+  const caller = left<ZswapCoinPublicKey,ContractAddress>(ownPublicKey());
+  assert(registeredPatients.lookup(caller), "HealthPro: account not registered as a patient");
+  healthRecords.insert(caller, disclose(record));
+}
+
+export circuit pause(): [] {
+  Ownable_assertOnlyOwner();
+  Pausable__pause();
+}
+
+export circuit unpause(): [] {
+  Ownable_assertOnlyOwner();
+  Pausable__unpause();
+}
