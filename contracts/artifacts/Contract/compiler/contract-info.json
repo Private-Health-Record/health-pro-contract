@@ -1,0 +1,68 @@
+{
+  "circuits": [
+    {
+      "name": "register",
+      "pure": false,
+      "arguments": [
+        {
+          "name": "_accountType",
+          "type": {
+            "type-name": "Enum",
+            "name": "AccountType",
+            "elements": [
+              "PROVIDER",
+              "PATIENT"
+            ]
+          }
+        }
+      ],
+      "result-type": {
+        "type-name": "Boolean"
+      }
+    },
+    {
+      "name": "storeHealthRecord",
+      "pure": false,
+      "arguments": [
+        {
+          "name": "record",
+          "type": {
+            "type-name": "Opaque",
+            "tsType": "string"
+          }
+        }
+      ],
+      "result-type": {
+        "type-name": "Tuple",
+        "types": [
+        ]
+      }
+    },
+    {
+      "name": "pause",
+      "pure": false,
+      "arguments": [
+      ],
+      "result-type": {
+        "type-name": "Tuple",
+        "types": [
+        ]
+      }
+    },
+    {
+      "name": "unpause",
+      "pure": false,
+      "arguments": [
+      ],
+      "result-type": {
+        "type-name": "Tuple",
+        "types": [
+        ]
+      }
+    }
+  ],
+  "witnesses": [
+  ],
+  "contracts": [
+  ]
+}
