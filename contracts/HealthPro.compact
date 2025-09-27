@@ -1,8 +1,6 @@
 pragma language_version >= 0.16.0 && <= 0.17;
 
 import CompactStandardLibrary;
-import "../compact-contracts/node_modules/@openzeppelin-compact/contracts/src/access/Ownable"
-  prefix Ownable_;
 import "../compact-contracts/node_modules/@openzeppelin-compact/contracts/src/access/AccessControl"
   prefix AccessControl_;
 import "../compact-contracts/node_modules/@openzeppelin-compact/contracts/src/security/Pausable"
@@ -26,7 +24,6 @@ export enum AccountType {
 constructor(
   _initOwner: Either<ZswapCoinPublicKey, ContractAddress>,
 ) {
-  Ownable_initialize(_initOwner);
   AccessControl__grantRole(AccessControl_DEFAULT_ADMIN_ROLE, _initOwner);
   PROVIDER_ROLE = persistentHash<Bytes<32>>(pad(32, "PROVIDER_ROLE"));
   PATIENT_ROLE = persistentHash<Bytes<32>>(pad(32, "PATIENT_ROLE"));
@@ -64,11 +61,11 @@ export circuit storeHealthRecord(record: Opaque<"string">): [] {
 }
 
 export circuit pause(): [] {
-  Ownable_assertOnlyOwner();
+  AccessControl_assertOnlyRole(AccessControl_DEFAULT_ADMIN_ROLE);
   Pausable__pause();
 }
 
 export circuit unpause(): [] {
-  Ownable_assertOnlyOwner();
+  AccessControl_assertOnlyRole(AccessControl_DEFAULT_ADMIN_ROLE);
   Pausable__unpause();
 }
