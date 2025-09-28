@@ -6,13 +6,13 @@ pragma language_version >= 0.16.0 && <= 0.17;
 
 import CompactStandardLibrary;
 
-import "../compact-contracts/node_modules/@openzeppelin-compact/contracts/src/access/AccessControl"
+import "./compact-contracts/node_modules/@openzeppelin-compact/contracts/src/access/AccessControl"
     prefix AccessControl_;
 
-import "../compact-contracts/node_modules/@openzeppelin-compact/contracts/src/security/Pausable"
+import "./compact-contracts/node_modules/@openzeppelin-compact/contracts/src/security/Pausable"
     prefix Pausable_;
 
-import "../compact-contracts/node_modules/@openzeppelin-compact/contracts/src/utils/Utils"
+import "./compact-contracts/node_modules/@openzeppelin-compact/contracts/src/utils/Utils"
     prefix Utils_;
 
 //*//////////////////////////////////////////////////////////////////////////
@@ -32,14 +32,6 @@ export struct DelegateInfo {
   grantedAt: Uint<64>,
   expiresAt: Uint<64>,
   accessLevel: AccessLevel
-}
-
-export struct AuditEntry {
-  actor: ZswapCoinPublicKey,
-  action: AuditAction,
-  target: ZswapCoinPublicKey,
-  timestamp: Uint<64>,
-  details: Opaque<"string">
 }
 
 export enum AccountType {
@@ -99,6 +91,8 @@ export ledger registeredProviders: Set<ZswapCoinPublicKey>;
 
 export ledger healthRecords: Map<ZswapCoinPublicKey, Opaque<"string">>;
 
+export ledger commitments: Map<ZswapCoinPublicKey, Bytes<32>>; // maps user public key to their commitment hash
+
 //*//////////////////////////////////////////////////////////////////////////
 //                                CONSTRUCTOR
 //////////////////////////////////////////////////////////////////////////*//
@@ -115,9 +109,9 @@ constructor(_initOwner: Either<ZswapCoinPublicKey, ContractAddress>) {
 //                             WITNESS FUNCTIONS
 //////////////////////////////////////////////////////////////////////////*//
 
-witness generate_private_key(userID: Uint<32>): Bytes<32>;
+witness generate_private_key(account: Uint<32>): Bytes<32>;
 
-witness reveal_private_key(userID: Uint<32>): Bytes<32>;
+witness reveal_private_key(account: Uint<32>): Bytes<32>;
 
 //*//////////////////////////////////////////////////////////////////////////
 //                           SIGNUP / REGISTRATION
@@ -167,6 +161,9 @@ export circuit grantProviderAccess(provider: ZswapCoinPublicKey): [] {
   const caller = left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey());
   assert(registeredPatients.member(caller.left), "HealthPro: caller not registered as a patient");
   assert(registeredProviders.member(disclose(provider)), "HealthPro: target account not registered as a provider");
+
+  const commitment = commitments.lookup(disclose(caller.left));
+  const keyDigest = reveal_private_key(provider.bytes as Field as Uint<32>);
 }
 
 //*//////////////////////////////////////////////////////////////////////////
@@ -193,8 +190,8 @@ export circuit compute_key_digest(privateKey: Bytes<32>): Bytes<32> {
 }
 
 // Compute commitment: hash of userID and keyDigest
-export circuit compute_commitment(userId: Uint<32>, keyDigest: Bytes<32>): Bytes<32> {
-  return persistentHash<[Uint<32>, Bytes<32>]>([userId, keyDigest]);
+export circuit compute_commitment(account: Uint<32>, keyDigest: Bytes<32>): Bytes<32> {
+  return persistentHash<[Uint<32>, Bytes<32>]>([account, keyDigest]);
 }
 
 // Compute an auth proof by domain-separating (namespacing) and hashing the commitment, randomChallenge, and keyDigest
