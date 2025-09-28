@@ -24,16 +24,18 @@ git submodule update --init --recursive
 2) **Install OpenZeppelin Compact deps (inside submodule)**
 ```bash
 cd compact-contracts
-npm ci
-cd ..
+nvm install && \
+yarn && \
+SKIP_ZK=true yarn compact
 ```
 
 3) **Compile the contract** ✅
 ```bash
+cd ..
 compact compile HealthPro.compact artifacts/
 ```
 
-You’ll find outputs under `artifacts/Contract/` (see Structure below).
+You’ll find outputs under `artifacts/` (see Structure below).
 
 Pro tip: run `compact --version` to check your compiler.
 
@@ -43,15 +45,14 @@ Pro tip: run `compact --version` to check your compiler.
 
 ```
 health-pro/
-├── HealthPro.compact                  # Main contract
+├── HealthPro.compact              # Main contract
 ├── artifacts/
-│   └── Contract/
-│       ├── compiler/
-│       │   └── contract-info.json    # ABI-like interface description
-│       ├── contract/                 # Compiled artifacts
-│       ├── keys/                     # Proving/verifier material
-│       └── zkir/                     # ZK IR and related
-├── compact-contracts/                # OpenZeppelin Compact (git submodule)
+│    ├── compiler/
+│    │   └── contract-info.json    # ABI-like interface description
+│    ├── contract/                 # Compiled artifacts
+│    ├── keys/                     # Proving/verifier material
+│    └── zkir/                     # ZK IR and related
+├── compact-contracts/             # OpenZeppelin Compact (git submodule)
 ├── .gitmodules
 ├── .gitignore
 └── README.md
@@ -73,7 +74,7 @@ Ensure `compact-contracts/` exists and its `node_modules/` is installed (see Qui
 
 ## 🧠 Contract Interface (Summary)
 
-Authoritative interface: `artifacts/Contract/compiler/contract-info.json`.
+Authoritative interface: `artifacts/compiler/contract-info.json`.
 
 - **register_account(_accountType: AccountType): Boolean**
   - Register caller as `PROVIDER` or `PATIENT` and assign the role.
@@ -119,7 +120,7 @@ Roles: `PROVIDER_ROLE`, `PATIENT_ROLE`, `DELEGATE_ROLE`, `AUDITOR_ROLE`
   ```bash
   compact compile HealthPro.compact artifacts/
   ```
-- Inspect the interface quickly by opening `artifacts/Contract/compiler/contract-info.json`.
+- Inspect the interface quickly by opening `artifacts/compiler/contract-info.json`.
 
 ---
 
